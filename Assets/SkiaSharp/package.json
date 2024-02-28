@@ -1,0 +1,16 @@
+{
+  "name": "com.u2sb.skiasharp",
+  "displayName": "UnitySkiaSharp",
+  "version": "2.88.7",
+  "unity": "2021.3",
+  "description": "SkiaSharp for Unity",
+  "dependencies": {},
+  "keywords": [
+    "skia",
+    "image"
+  ],
+  "license": "MIT",
+  "documentationUrl": "https://github.com/u2sb/UnitySkiaSharp",
+  "changelogUrl": "https://github.com/u2sb/UnitySkiaSharp/releases",
+  "licensesUrl": "https://github.com/u2sb/UnitySkiaSharp/blob/master/LICENSE"
+}
