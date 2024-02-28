@@ -1,7 +1,7 @@
 {
   "name": "com.u2sb.skiasharp",
   "displayName": "UnitySkiaSharp",
-  "version": "2.88.7",
+  "version": "3.0.0-preview.2.1",
   "unity": "2021.3",
   "description": "SkiaSharp for Unity",
   "dependencies": {},
