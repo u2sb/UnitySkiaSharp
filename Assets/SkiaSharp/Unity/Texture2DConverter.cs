@@ -10,13 +10,12 @@ namespace SkiaSharp.Unity
     public static Texture2D ToTexture2D(this SKBitmap bitmap, int width = 0, int height = 0,
       SKSamplingOptions? options = null)
     {
-      if (width != 0 || height != 0)
-      {
-        width = width == 0 ? bitmap.Width : width;
-        height = height == 0 ? bitmap.Height : height;
+      var resize = width != 0 || height != 0;
 
-        bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
-      }
+      width = width == 0 ? bitmap.Width : width;
+      height = height == 0 ? bitmap.Height : height;
+
+      if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
 
       Texture2D texture2D;
 
@@ -50,6 +49,10 @@ namespace SkiaSharp.Unity
     public static SKBitmap ToSkBitmap(this Texture2D texture2D, int width = 0, int height = 0,
       SKSamplingOptions? options = null)
     {
+      var resize = width != 0 || height != 0;
+      width = width == 0 ? texture2D.width : width;
+      height = height == 0 ? texture2D.height : height;
+
       SKBitmap bitmap;
 
       if (texture2D.isReadable && texture2D.format.TryConvertSkColorTypes(out var skColorType))
@@ -80,13 +83,7 @@ namespace SkiaSharp.Unity
         bitmap.Pixels = writer.WrittenSpan.ToArray();
       }
 
-      if (width != 0 || height != 0)
-      {
-        width = width == 0 ? bitmap.Width : width;
-        height = height == 0 ? bitmap.Height : height;
-
-        bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
-      }
+      if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
 
       return bitmap;
     }
