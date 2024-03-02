@@ -60,10 +60,8 @@ namespace SkiaSharp.Unity
       {
         unsafe
         {
-          var data = texture2D.isReadable
-            ? texture2D.GetPixelData<byte>(0).AsReadOnlySpan()
-            : texture2D.GetRawTextureData<byte>().AsReadOnlySpan();
-
+          ReadOnlySpan<byte> data =
+            (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixelData<byte>(0);
 
           var writer = new ArrayBufferWriter<byte>(width * height * l);
 
@@ -80,30 +78,41 @@ namespace SkiaSharp.Unity
       }
       else
       {
-        if (texture2D.isReadable)
-        {
-          var data = texture2D.GetPixels32();
-          var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
+        var data = (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixels32();
 
-          var writer = new ArrayBufferWriter<SKColor>();
+        var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
 
-          for (var i = height - 1; i >= 0; i--) writer.Write(skColors.Slice(i * width, width));
+        var writer = new ArrayBufferWriter<SKColor>();
 
-          bitmap = new SKBitmap(texture2D.width, texture2D.height, skColorType, SKAlphaType.Premul);
+        for (var i = height - 1; i >= 0; i--) writer.Write(skColors.Slice(i * width, width));
 
-          bitmap.Pixels = writer.WrittenSpan.ToArray();
-        }
-        else
-        {
-          var data = texture2D.GetRawTextureData<byte>();
-          var png = ImageConversion.EncodeNativeArrayToPNG(data, texture2D.graphicsFormat, (uint)width, (uint)height);
-          bitmap = SKBitmap.Decode(png);
-        }
+        bitmap = new SKBitmap(texture2D.width, texture2D.height, skColorType, SKAlphaType.Premul);
+
+        bitmap.Pixels = writer.WrittenSpan.ToArray();
       }
 
       if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
 
       return bitmap;
+    }
+
+    /// <summary>
+    ///   从GUP读取数据到CPU
+    /// </summary>
+    /// <param name="texture2D"></param>
+    /// <returns></returns>
+    private static Texture2D GetTextureFromGpu(this Texture2D texture2D)
+    {
+      var width = texture2D.width;
+      var height = texture2D.height;
+
+      var renderTexture = new RenderTexture(width, height, 32);
+      Graphics.Blit(texture2D, renderTexture);
+
+      var tex2 = new Texture2D(width, height);
+      tex2.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+      renderTexture.Release();
+      return tex2;
     }
   }
 }
