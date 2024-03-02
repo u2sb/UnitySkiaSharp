@@ -59,7 +59,6 @@ namespace SkiaSharp.Unity
       {
         if (texture2D.format.TryConvertSkColorTypes(out var skColorType))
         {
-          texture2D.GetNativeTexturePtr()
           var data = texture2D.GetPixelData<byte>(0).AsReadOnlySpan();
 
           var writer = new ArrayBufferWriter<byte>(width * height * 4);
@@ -91,7 +90,7 @@ namespace SkiaSharp.Unity
         var data = texture2D.EncodeToPNG();
         bitmap = SKBitmap.Decode(data);
       }
-      
+
 
       if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
 
