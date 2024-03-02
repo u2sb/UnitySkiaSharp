@@ -5,7 +5,7 @@ using UnityEngine;
 
 namespace SkiaSharp.Unity
 {
-  public static class Texture2DConverter
+  public static partial class Texture2DConverter
   {
     public static Texture2D ToTexture2D(this SKBitmap bitmap, int width = 0, int height = 0,
       SKSamplingOptions? options = null)
@@ -23,7 +23,7 @@ namespace SkiaSharp.Unity
       {
         var data = bitmap.GetPixelSpan();
         var writer = new ArrayBufferWriter<byte>(width * height * l);
-
+        
         for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * l, width * l));
 
         texture2D = new Texture2D(width, height, textureFormat, false);
@@ -58,20 +58,19 @@ namespace SkiaSharp.Unity
 
       if (l > 0)
       {
+        ReadOnlySpan<byte> data =
+          (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixelData<byte>(0);
+
+        var writer = new ArrayBufferWriter<byte>(width * height * l);
+
+        for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * l, width * l));
+
+        var span = writer.WrittenSpan;
         unsafe
         {
-          ReadOnlySpan<byte> data =
-            (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixelData<byte>(0);
-
-          var writer = new ArrayBufferWriter<byte>(width * height * l);
-
-          for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * l, width * l));
-
-          var span = writer.WrittenSpan;
-
           fixed (byte* ptr = span)
           {
-            bitmap = new SKBitmap(texture2D.width, texture2D.height, skColorType, SKAlphaType.Premul);
+            bitmap = new SKBitmap(width, height, skColorType, SKAlphaType.Premul);
             bitmap.SetPixels((IntPtr)ptr);
           }
         }
@@ -111,7 +110,7 @@ namespace SkiaSharp.Unity
 
       var tex2 = new Texture2D(width, height);
       tex2.ReadPixels(new Rect(0, 0, width, height), 0, 0);
-      renderTexture.Release();
+
       return tex2;
     }
   }

@@ -20,7 +20,6 @@ namespace SkiaSharp.Unity
       SKColorType.Rg1616,
       SKColorType.Rgba16161616,
 
-
       SKColorType.Rgba1010102,
       SKColorType.Rgb101010x,
       SKColorType.Gray8,
@@ -47,7 +46,7 @@ namespace SkiaSharp.Unity
 
       TextureFormat.RGBA64,
       TextureFormat.RGBA64,
-      TextureFormat.RGB24,
+      TextureFormat.RGBA32,
       TextureFormat.RGBAHalf,
       TextureFormat.RGBA64,
       TextureFormat.RGBA64,
