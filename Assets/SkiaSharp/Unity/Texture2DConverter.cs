@@ -79,19 +79,26 @@ namespace SkiaSharp.Unity
       }
       else
       {
-        if (!texture2D.isReadable) throw new Exception("texture must readable");
-        var data = texture2D.GetPixels32();
-        var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
+        if (texture2D.isReadable)
+        {
+          var data = texture2D.GetPixels32();
+          var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
 
-        var writer = new ArrayBufferWriter<SKColor>();
+          var writer = new ArrayBufferWriter<SKColor>();
 
-        for (var i = height - 1; i >= 0; i--) writer.Write(skColors.Slice(i * width, width));
+          for (var i = height - 1; i >= 0; i--) writer.Write(skColors.Slice(i * width, width));
 
-        bitmap = new SKBitmap(texture2D.width, texture2D.height, SKColorType.Rgba8888, SKAlphaType.Premul);
+          bitmap = new SKBitmap(texture2D.width, texture2D.height, SKColorType.Rgba8888, SKAlphaType.Premul);
 
-        bitmap.Pixels = writer.WrittenSpan.ToArray();
+          bitmap.Pixels = writer.WrittenSpan.ToArray();
+        }
+        else
+        {
+          var data = texture2D.GetRawTextureData<byte>();
+          var png = ImageConversion.EncodeNativeArrayToPNG(data, texture2D.graphicsFormat, (uint)width, (uint)height);
+          bitmap = SKBitmap.Decode(png);
+        }
       }
-
 
       if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
 
