@@ -55,33 +55,43 @@ namespace SkiaSharp.Unity
 
       SKBitmap bitmap;
 
-      if (texture2D.isReadable && texture2D.format.TryConvertSkColorTypes(out var skColorType))
+      if (texture2D.isReadable)
       {
-        var data = texture2D.GetPixelData<byte>(0).AsReadOnlySpan();
+        if (texture2D.format.TryConvertSkColorTypes(out var skColorType))
+        {
+          texture2D.GetNativeTexturePtr()
+          var data = texture2D.GetPixelData<byte>(0).AsReadOnlySpan();
 
-        var writer = new ArrayBufferWriter<byte>(width * height * 4);
+          var writer = new ArrayBufferWriter<byte>(width * height * 4);
 
-        for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * 4, width * 4));
+          for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * 4, width * 4));
 
-        var span = writer.WrittenSpan;
-        var spanPtr = (IntPtr)span.GetPinnableReference();
+          var span = writer.WrittenSpan;
+          var spanPtr = (IntPtr)span.GetPinnableReference();
 
-        bitmap = new SKBitmap(texture2D.width, texture2D.height, skColorType, SKAlphaType.Premul);
-        bitmap.SetPixels(spanPtr);
+          bitmap = new SKBitmap(texture2D.width, texture2D.height, skColorType, SKAlphaType.Premul);
+          bitmap.SetPixels(spanPtr);
+        }
+        else
+        {
+          var data = texture2D.GetPixels32();
+          var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
+
+          var writer = new ArrayBufferWriter<SKColor>();
+
+          for (var i = height - 1; i >= 0; i--) writer.Write(skColors.Slice(i * width, width));
+
+          bitmap = new SKBitmap(texture2D.width, texture2D.height, SKColorType.Rgba8888, SKAlphaType.Premul);
+
+          bitmap.Pixels = writer.WrittenSpan.ToArray();
+        }
       }
       else
       {
-        var data = texture2D.GetPixels32();
-        var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
-
-        var writer = new ArrayBufferWriter<SKColor>();
-
-        for (var i = height - 1; i >= 0; i--) writer.Write(skColors.Slice(i * width, width));
-
-        bitmap = new SKBitmap(texture2D.width, texture2D.height, SKColorType.Rgba8888, SKAlphaType.Premul);
-
-        bitmap.Pixels = writer.WrittenSpan.ToArray();
+        var data = texture2D.EncodeToPNG();
+        bitmap = SKBitmap.Decode(data);
       }
+      
 
       if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
 
