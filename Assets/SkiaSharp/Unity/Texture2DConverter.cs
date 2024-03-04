@@ -1,7 +1,9 @@
 using System;
 using System.Buffers;
 using System.Linq;
+using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace SkiaSharp.Unity
 {
@@ -23,7 +25,7 @@ namespace SkiaSharp.Unity
       {
         var data = bitmap.GetPixelSpan();
         var writer = new ArrayBufferWriter<byte>(width * height * l);
-        
+
         for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * l, width * l));
 
         texture2D = new Texture2D(width, height, textureFormat, false);
@@ -36,7 +38,7 @@ namespace SkiaSharp.Unity
 
         for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width, width));
 
-        var colors = writer.WrittenSpan.ToArray().Select(s => s.ToUnityColor32()).ToArray();
+        var colors = writer.WrittenSpan.ToArray().AsParallel().AsOrdered().Select(s => s.ToUnityColor32()).ToArray();
 
         texture2D = new Texture2D(width, height, textureFormat, false);
         texture2D.SetPixels32(colors);
@@ -59,7 +61,7 @@ namespace SkiaSharp.Unity
       if (l > 0)
       {
         ReadOnlySpan<byte> data =
-          (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixelData<byte>(0);
+          texture2D.isReadable ? texture2D.GetPixelData<byte>(0) : texture2D.GetTextureDataFromGpu();
 
         var writer = new ArrayBufferWriter<byte>(width * height * l);
 
@@ -79,7 +81,7 @@ namespace SkiaSharp.Unity
       {
         var data = (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixels32();
 
-        var skColors = data.Select(s => s.ToSkColor()).ToArray().AsSpan();
+        var skColors = data.AsParallel().AsOrdered().Select(s => s.ToSkColor()).ToArray().AsSpan();
 
         var writer = new ArrayBufferWriter<SKColor>();
 
@@ -96,7 +98,7 @@ namespace SkiaSharp.Unity
     }
 
     /// <summary>
-    ///   从GUP读取数据到CPU
+    ///   从GUP读取贴图
     /// </summary>
     /// <param name="texture2D"></param>
     /// <returns></returns>
@@ -112,6 +114,20 @@ namespace SkiaSharp.Unity
       tex2.ReadPixels(new Rect(0, 0, width, height), 0, 0);
 
       return tex2;
+    }
+
+    /// <summary>
+    ///   从GPU读取数据
+    /// </summary>
+    /// <param name="texture2D"></param>
+    /// <returns></returns>
+    /// <exception cref="Exception"></exception>
+    private static NativeArray<byte> GetTextureDataFromGpu(this Texture2D texture2D)
+    {
+      var request = AsyncGPUReadback.Request(texture2D, 0, texture2D.graphicsFormat);
+      request.WaitForCompletion();
+      if (request.hasError) throw new Exception("");
+      return request.GetData<byte>();
     }
   }
 }

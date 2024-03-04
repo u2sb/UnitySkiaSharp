@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Buffers;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,7 +24,7 @@ namespace SkiaSharp.Unity
       {
         var data = texture2D.isReadable
           ? texture2D.GetPixelData<byte>(0)
-          : await texture2D.GetTextureFromGpuAsync();
+          : await texture2D.GetTextureDataFromGpuAsync();
 
         var writer = new ArrayBufferWriter<byte>(width * height * l);
 
@@ -44,7 +44,7 @@ namespace SkiaSharp.Unity
       {
         var data = (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixels32();
 
-        var skColors = data.Select(s => s.ToSkColor()).ToArray().AsMemory();
+        var skColors = data.AsParallel().AsOrdered().Select(s => s.ToSkColor()).ToArray().AsMemory();
 
         var writer = new ArrayBufferWriter<SKColor>();
 
@@ -66,7 +66,7 @@ namespace SkiaSharp.Unity
     /// <param name="texture2D"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    private static async ValueTask<NativeArray<byte>> GetTextureFromGpuAsync(this Texture2D texture2D)
+    private static async ValueTask<NativeArray<byte>> GetTextureDataFromGpuAsync(this Texture2D texture2D)
     {
       var request = await AsyncGPUReadback.RequestAsync(texture2D, 0, texture2D.graphicsFormat);
       if (request.hasError) throw new Exception("");
