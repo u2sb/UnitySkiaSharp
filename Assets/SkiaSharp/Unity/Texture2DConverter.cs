@@ -7,7 +7,7 @@ using UnityEngine.Rendering;
 
 namespace SkiaSharp.Unity
 {
-  public static partial class Texture2DConverter
+  public static class Texture2DConverter
   {
     public static Texture2D ToTexture2D(this SKBitmap bitmap, int width = 0, int height = 0,
       SKSamplingOptions? options = null)
@@ -24,6 +24,7 @@ namespace SkiaSharp.Unity
       if (l > 0)
       {
         var data = bitmap.GetPixelSpan();
+
         var writer = new ArrayBufferWriter<byte>(width * height * l);
 
         for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * l, width * l));
