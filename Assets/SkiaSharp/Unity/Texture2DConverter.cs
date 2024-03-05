@@ -3,6 +3,7 @@ using System.Buffers;
 using System.Linq;
 using Unity.Collections;
 using UnityEngine;
+using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 
 namespace SkiaSharp.Unity
@@ -101,18 +102,13 @@ namespace SkiaSharp.Unity
     /// <summary>
     ///   从GUP读取贴图
     /// </summary>
-    /// <param name="texture2D"></param>
+    /// <param name="texture"></param>
     /// <returns></returns>
-    private static Texture2D GetTextureFromGpu(this Texture2D texture2D)
+    public static Texture2D GetTextureFromGpu(this Texture texture)
     {
-      var width = texture2D.width;
-      var height = texture2D.height;
-
-      var renderTexture = new RenderTexture(width, height, 32);
-      Graphics.Blit(texture2D, renderTexture);
-
-      var tex2 = new Texture2D(width, height);
-      tex2.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+      var data = GetTextureDataFromGpu(texture);
+      var tex2 = new Texture2D(texture.width, texture.height, texture.graphicsFormat, TextureCreationFlags.None);
+      tex2.SetPixelData(data, 0);
 
       return tex2;
     }
@@ -120,12 +116,12 @@ namespace SkiaSharp.Unity
     /// <summary>
     ///   从GPU读取数据
     /// </summary>
-    /// <param name="texture2D"></param>
+    /// <param name="texture"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    private static NativeArray<byte> GetTextureDataFromGpu(this Texture2D texture2D)
+    public static NativeArray<byte> GetTextureDataFromGpu(this Texture texture)
     {
-      var request = AsyncGPUReadback.Request(texture2D, 0, texture2D.graphicsFormat);
+      var request = AsyncGPUReadback.Request(texture, 0, texture.graphicsFormat);
       request.WaitForCompletion();
       if (request.hasError) throw new Exception("");
       return request.GetData<byte>();
