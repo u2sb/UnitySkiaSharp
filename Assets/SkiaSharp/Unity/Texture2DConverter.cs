@@ -1,6 +1,5 @@
 using System;
 using System.Buffers;
-using System.Linq;
 using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
@@ -35,15 +34,19 @@ namespace SkiaSharp.Unity
       }
       else
       {
-        var data = bitmap.Pixels.AsSpan();
+        var data0 = bitmap.Pixels.AsSpan();
         var writer = new ArrayBufferWriter<SKColor>();
 
-        for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width, width));
+        for (var i = height - 1; i >= 0; i--) writer.Write(data0.Slice(i * width, width));
 
-        var colors = writer.WrittenSpan.ToArray().AsParallel().AsOrdered().Select(s => s.ToUnityColor32()).ToArray();
+        var data1 = writer.WrittenSpan.AsNativeArray();
+        var colors = ColorConverter.ConvertToColor32(data1, width * 64);
 
         texture2D = new Texture2D(width, height, textureFormat, false);
-        texture2D.SetPixels32(colors);
+        texture2D.SetPixels32(colors.ToArray());
+
+        data1.Dispose();
+        colors.Dispose();
       }
 
       texture2D.Apply();
@@ -60,10 +63,27 @@ namespace SkiaSharp.Unity
       SKBitmap bitmap;
       var l = texture2D.format.TryConvertSkColorTypes(out var skColorType);
 
-      if (l > 0)
+      if (l > 0 && texture2D.isReadable)
       {
-        ReadOnlySpan<byte> data =
-          texture2D.isReadable ? texture2D.GetPixelData<byte>(0) : texture2D.GetTextureDataFromGpu();
+        ReadOnlySpan<byte> data = texture2D.GetPixelData<byte>(0);
+
+        var writer = new ArrayBufferWriter<byte>(width * height * l);
+
+        for (var i = height - 1; i >= 0; i--) writer.Write(data.Slice(i * width * l, width * l));
+
+        var span = writer.WrittenSpan;
+        unsafe
+        {
+          fixed (byte* ptr = span)
+          {
+            bitmap = new SKBitmap(width, height, skColorType, SKAlphaType.Premul);
+            bitmap.SetPixels((IntPtr)ptr);
+          }
+        }
+      }
+      else if (l > 0 && texture2D.GetTextureDataFromGpu(out var textureData))
+      {
+        ReadOnlySpan<byte> data = textureData;
 
         var writer = new ArrayBufferWriter<byte>(width * height * l);
 
@@ -81,9 +101,11 @@ namespace SkiaSharp.Unity
       }
       else
       {
-        var data = (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixels32();
+        var data0 = (texture2D.isReadable ? texture2D : texture2D.GetTextureFromGpu()).GetPixels32();
+        var data1 = new NativeArray<Color32>(data0, Allocator.TempJob);
 
-        var skColors = data.AsParallel().AsOrdered().Select(s => s.ToSkColor()).ToArray().AsSpan();
+        var data2 = ColorConverter.ConvertToSkColor(data1, width * 64);
+        var skColors = data2.AsSpan();
 
         var writer = new ArrayBufferWriter<SKColor>();
 
@@ -92,6 +114,8 @@ namespace SkiaSharp.Unity
         bitmap = new SKBitmap(texture2D.width, texture2D.height, skColorType, SKAlphaType.Premul);
 
         bitmap.Pixels = writer.WrittenSpan.ToArray();
+        data1.Dispose();
+        data2.Dispose();
       }
 
       if (resize) bitmap = bitmap.Resize(new SKSizeI(width, height), options ?? SKSamplingOptions.Default);
@@ -106,9 +130,24 @@ namespace SkiaSharp.Unity
     /// <returns></returns>
     public static Texture2D GetTextureFromGpu(this Texture texture)
     {
-      var data = GetTextureDataFromGpu(texture);
-      var tex2 = new Texture2D(texture.width, texture.height, texture.graphicsFormat, TextureCreationFlags.None);
-      tex2.SetPixelData(data, 0);
+      var width = texture.width;
+      var height = texture.height;
+      Texture2D tex2;
+      if (texture.GetTextureDataFromGpu(out var data))
+      {
+        tex2 = new Texture2D(width, height, texture.graphicsFormat, TextureCreationFlags.None);
+        tex2.SetPixelData(data, 0);
+      }
+      else
+      {
+        var renderTexture = new RenderTexture(width, height, 32);
+        Graphics.Blit(texture, renderTexture);
+        var tmpTexture = RenderTexture.active;
+        RenderTexture.active = renderTexture;
+        tex2 = new Texture2D(width, height);
+        tex2.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+        RenderTexture.active = tmpTexture;
+      }
 
       return tex2;
     }
@@ -117,14 +156,26 @@ namespace SkiaSharp.Unity
     ///   从GPU读取数据
     /// </summary>
     /// <param name="texture"></param>
+    /// <param name="data"></param>
     /// <returns></returns>
     /// <exception cref="Exception"></exception>
-    public static NativeArray<byte> GetTextureDataFromGpu(this Texture texture)
+    public static bool GetTextureDataFromGpu(this Texture texture, out NativeArray<byte> data)
     {
-      var request = AsyncGPUReadback.Request(texture, 0, texture.graphicsFormat);
-      request.WaitForCompletion();
-      if (request.hasError) throw new Exception("");
-      return request.GetData<byte>();
+#if UNITY_2023_2_OR_NEWER
+      if (SystemInfo.IsFormatSupported(texture.graphicsFormat, GraphicsFormatUsage.ReadPixels))
+#else
+      if (SystemInfo.IsFormatSupported(texture.graphicsFormat, FormatUsage.ReadPixels))
+#endif
+      {
+        var request = AsyncGPUReadback.Request(texture, 0, texture.graphicsFormat);
+        request.WaitForCompletion();
+        if (request.hasError) throw new Exception("");
+        data = request.GetData<byte>();
+        return true;
+      }
+
+      data = new NativeArray<byte>();
+      return false;
     }
   }
 }
