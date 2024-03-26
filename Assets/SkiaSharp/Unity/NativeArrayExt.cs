@@ -10,40 +10,32 @@ namespace SkiaSharp.Unity
     ///   转换到 NativeArray
     /// </summary>
     /// <param name="span"></param>
-    /// <param name="allocator"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static unsafe NativeArray<T> AsNativeArray<T>(this ReadOnlySpan<T> span,
-      Allocator allocator = Allocator.TempJob) where T : unmanaged
+    public static unsafe NativeArray<T> AsNativeArray<T>(this ReadOnlySpan<T> span) where T : unmanaged
     {
-      var data = new NativeArray<T>(span.Length, allocator);
       fixed (void* source = span)
       {
-        var dest = data.GetUnsafePtr();
-        UnsafeUtility.MemCpy(dest, source, span.Length * UnsafeUtility.SizeOf<T>());
+        var data = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(source, span.Length, Allocator.None);
+        NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref data, AtomicSafetyHandle.Create());
+        return data;
       }
-
-      return data;
     }
 
     /// <summary>
     ///   转换到 NativeArray
     /// </summary>
     /// <param name="span"></param>
-    /// <param name="allocator"></param>
     /// <typeparam name="T"></typeparam>
     /// <returns></returns>
-    public static unsafe NativeArray<T> AsNativeArray<T>(this Span<T> span,
-      Allocator allocator = Allocator.TempJob) where T : unmanaged
+    public static unsafe NativeArray<T> AsNativeArray<T>(this Span<T> span) where T : unmanaged
     {
-      var data = new NativeArray<T>(span.Length, allocator);
       fixed (void* source = span)
       {
-        var dest = data.GetUnsafePtr();
-        UnsafeUtility.MemCpy(dest, source, span.Length * UnsafeUtility.SizeOf<T>());
+        var data = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(source, span.Length, Allocator.None);
+        NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref data, AtomicSafetyHandle.Create());
+        return data;
       }
-
-      return data;
     }
   }
 }
