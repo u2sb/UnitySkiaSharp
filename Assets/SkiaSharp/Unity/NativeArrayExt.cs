@@ -17,7 +17,9 @@ namespace SkiaSharp.Unity
       fixed (void* source = span)
       {
         var data = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(source, span.Length, Allocator.None);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref data, AtomicSafetyHandle.Create());
+#endif
         return data;
       }
     }
@@ -33,7 +35,9 @@ namespace SkiaSharp.Unity
       fixed (void* source = span)
       {
         var data = NativeArrayUnsafeUtility.ConvertExistingDataToNativeArray<T>(source, span.Length, Allocator.None);
+#if ENABLE_UNITY_COLLECTIONS_CHECKS
         NativeArrayUnsafeUtility.SetAtomicSafetyHandle(ref data, AtomicSafetyHandle.Create());
+#endif
         return data;
       }
     }
