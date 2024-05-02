@@ -18,7 +18,7 @@ namespace Tester
     {
       var rawImage = GetComponent<RawImage>();
 
-      var white = new Texture2D(128, 128);
+      var white = Texture2D.whiteTexture;
 
       var bitmap = t2d.ToSkBitmap();
       var t2d0 = bitmap.ToTexture2D();
@@ -40,7 +40,7 @@ namespace Tester
       await UniTask.WaitForSeconds(1);
 
       var image = surface.Snapshot();
-      var t2d2 = surface.ToTexture2D(bitmap.Width, bitmap.Height);
+      var t2d2 = image.ToTexture2D(bitmap.Width, bitmap.Height);
       rawImage.texture = t2d2;
     }
   }

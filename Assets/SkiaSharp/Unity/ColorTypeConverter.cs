@@ -1,85 +1,104 @@
-using System;
 using UnityEngine;
 
 namespace SkiaSharp.Unity
 {
   internal static class ColorTypeConverter
   {
-    private static readonly SKColorType[] SkColorTypes =
-    {
-      SKColorType.Alpha8,
-      SKColorType.Rgb565,
-      SKColorType.Rgba8888,
-      SKColorType.Rgb888x,
-      SKColorType.Bgra8888,
-      SKColorType.RgbaF16,
-      SKColorType.RgbaF16Clamped,
-      SKColorType.RgbaF32,
-      SKColorType.Rg88,
-      SKColorType.RgF16,
-      SKColorType.Rg1616,
-      SKColorType.Rgba16161616,
-
-      SKColorType.Rgba1010102,
-      SKColorType.Rgb101010x,
-      SKColorType.Gray8,
-      SKColorType.AlphaF16,
-      SKColorType.Alpha16,
-      SKColorType.Bgra1010102,
-      SKColorType.Bgr101010x
-    };
-
-    private static readonly TextureFormat[] TextureFormats =
-    {
-      TextureFormat.Alpha8,
-      TextureFormat.RGB565,
-      TextureFormat.RGBA32,
-      TextureFormat.RGBA32,
-      TextureFormat.BGRA32,
-      TextureFormat.RGBAHalf,
-      TextureFormat.RGBAHalf,
-      TextureFormat.RGBAFloat,
-      TextureFormat.RG16,
-      TextureFormat.RGHalf,
-      TextureFormat.RG32,
-      TextureFormat.RGBA64,
-
-      TextureFormat.RGBA64,
-      TextureFormat.RGBA64,
-      TextureFormat.RGBA32,
-      TextureFormat.RGBAHalf,
-      TextureFormat.RGBA64,
-      TextureFormat.RGBA64,
-      TextureFormat.RGBA64
-    };
-
-    public static readonly int[] LInts = { 1, 2, 4, 4, 4, 8, 8, 16, 2, 4, 4, 8, 0, 0, 0, 0, 0, 0, 0 };
-
-
     public static int TryConvertToTextureFormat(this SKColorType skColorType, out TextureFormat textureFormat)
     {
-      var index = Array.IndexOf(SkColorTypes, skColorType);
-      if (index >= 0)
+      switch (skColorType)
       {
-        textureFormat = TextureFormats[index];
-        return LInts[index];
+        case SKColorType.Alpha8:
+          textureFormat = TextureFormat.Alpha8;
+          return 1;
+        case SKColorType.Rgb565:
+          textureFormat = TextureFormat.RGB565;
+          return 2;
+        case SKColorType.Rgba8888:
+        case SKColorType.Rgb888x:
+          textureFormat = TextureFormat.RGBA32;
+          return 4;
+        case SKColorType.Bgra8888:
+          textureFormat = TextureFormat.BGRA32;
+          return 4;
+        case SKColorType.RgbaF16:
+        case SKColorType.RgbaF16Clamped:
+          textureFormat = TextureFormat.RGBAHalf;
+          return 8;
+        case SKColorType.RgbaF32:
+          textureFormat = TextureFormat.RGBAFloat;
+          return 16;
+        case SKColorType.Rg88:
+          textureFormat = TextureFormat.RG16;
+          return 2;
+        case SKColorType.RgF16:
+          textureFormat = TextureFormat.RGHalf;
+          return 4;
+        case SKColorType.Rg1616:
+          textureFormat = TextureFormat.RG32;
+          return 4;
+        case SKColorType.Rgba16161616:
+          textureFormat = TextureFormat.RGBA64;
+          return 8;
+        case SKColorType.Gray8:
+          textureFormat = TextureFormat.RGBA32;
+          break;
+        case SKColorType.AlphaF16:
+          textureFormat = TextureFormat.RGBAHalf;
+          break;
+        case SKColorType.Alpha16:
+        case SKColorType.Rgba1010102:
+        case SKColorType.Rgb101010x:
+        case SKColorType.Bgra1010102:
+        case SKColorType.Bgr101010x:
+          textureFormat = TextureFormat.RGBA64;
+          break;
+        default:
+          textureFormat = TextureFormat.RGBA32;
+          break;
       }
 
-      textureFormat = TextureFormat.RGBA32;
-      return 0;
+      return -1;
     }
 
     public static int TryConvertSkColorTypes(this TextureFormat textureFormat, out SKColorType skColorType)
     {
-      var index = Array.IndexOf(TextureFormats, textureFormat);
-      if (index >= 0)
+      switch (textureFormat)
       {
-        skColorType = SkColorTypes[index];
-        return LInts[index];
+        case TextureFormat.Alpha8:
+          skColorType = SKColorType.Alpha8;
+          return 1;
+        case TextureFormat.RGB565:
+          skColorType = SKColorType.Rgb565;
+          return 2;
+        case TextureFormat.RGBA32:
+          skColorType = SKColorType.Rgba8888;
+          return 4;
+        case TextureFormat.RGBAHalf:
+          skColorType = SKColorType.RgbaF16;
+          return 8;
+        case TextureFormat.RGBAFloat:
+          skColorType = SKColorType.RgbaF32;
+          return 16;
+        case TextureFormat.RG16:
+          skColorType = SKColorType.Rg88;
+          return 2;
+        case TextureFormat.RGHalf:
+          skColorType = SKColorType.RgF16;
+          return 4;
+        case TextureFormat.RG32:
+          skColorType = SKColorType.Rg1616;
+          return 4;
+        case TextureFormat.RGBA64:
+          skColorType = SKColorType.Rgba16161616;
+          return 8;
+
+        default:
+          skColorType = SKColorType.Rgba8888;
+          break;
       }
 
-      skColorType = SKColorType.Rgba8888;
-      return 0;
+      return -1;
     }
   }
 }
