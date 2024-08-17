@@ -1,14 +1,14 @@
 {
   "dependencies": {
     "com.cysharp.unitask": {
-      "version": "2.5.4",
+      "version": "2.5.5",
       "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"
     },
     "com.unity.burst": {
-      "version": "1.8.13",
+      "version": "1.8.17",
       "depth": 0,
       "source": "registry",
       "dependencies": {
@@ -25,7 +25,7 @@
       "url": "https://packages.unity.com"
     },
     "com.unity.ide.rider": {
-      "version": "3.0.28",
+      "version": "3.0.31",
       "depth": 0,
       "source": "registry",
       "dependencies": {
