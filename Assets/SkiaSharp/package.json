@@ -1,12 +1,11 @@
 {
   "name": "com.u2sb.skiasharp",
   "displayName": "SkiaSharp.Unity",
-  "version": "3.0.0-preview.4.1.0",
+  "version": "3.0.0-preview.4.1.1",
   "unity": "2021.3",
   "description": "SkiaSharp for Unity",
   "dependencies": {
-    "com.unity.burst": "1.8.17",
-    "org.nuget.system.runtime.compilerservices.unsafe": "4.5.3"
+    "com.unity.burst": "1.8.17"
   },
   "keywords": [
     "skia",
