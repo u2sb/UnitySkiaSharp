@@ -2,7 +2,8 @@
     "name": "SkiaSharp.Unity",
     "rootNamespace": "",
     "references": [
-        "Unity.Burst"
+        "Unity.Burst",
+        "UniTask"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
